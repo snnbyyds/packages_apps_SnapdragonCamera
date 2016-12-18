@@ -69,6 +69,7 @@ import android.os.Looper;
 import android.os.Message;
 import android.os.PowerManager;
 import android.os.PowerManager.WakeLock;
+import android.os.SystemClock;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.util.Log;
@@ -1756,12 +1757,25 @@ public class CameraActivity extends Activity
         return result;
     }
 
+    private void waitForImageSave() {
+        long startTime = System.currentTimeMillis();
+        while (mCurrentModule.delayAppExitToSaveImage()) {
+            SystemClock.sleep(20);
+            long timeNow = System.currentTimeMillis();
+            if ((timeNow - startTime) > 5000) {
+                Log.e(TAG, "Couldn't save photo! Timed out after trying for 5000ms");
+                break;
+            }
+        }
+    }
+
     @Override
     public void onPause() {
         if (mSecureCamera && !hasCriticalPermissions()) {
             super.onPause();
             return;
         }
+        waitForImageSave();
         // Delete photos that are pending deletion
         performDeletion();
         mOrientationListener.disable();
@@ -2302,6 +2316,7 @@ public class CameraActivity extends Activity
     }
 
     private void closeModule(CameraModule module) {
+        waitForImageSave();
         module.onPauseBeforeSuper();
         module.onPauseAfterSuper();
     }

@@ -7276,6 +7276,10 @@ public class CaptureModule implements CameraModule, PhotoController,
         }
     }
 
+    public boolean delayAppExitToSaveImage() {
+        return false;
+    }
+
     @Override
     public void onPreviewUIReady() {
         updatePreviewSurfaceReadyState(true);
