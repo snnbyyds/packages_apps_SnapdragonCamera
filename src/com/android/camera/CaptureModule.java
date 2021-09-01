@@ -174,6 +174,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.Map;
+import java.util.HashMap;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -701,6 +702,8 @@ public class CaptureModule implements CameraModule, PhotoController,
             new CaptureRequest.Key<>("org.quic.camera.HWMFNRandAIDenoiser.isAIDE2Enabled", byte.class);
     public static final CaptureResult.Key<byte[]> HWMFNRandAIDE2TuningParams =
             new CaptureResult.Key<>("org.quic.camera.HWMFNRandAIDenoiser.HWMFNRandAIDE2TuningParams", byte[].class);
+    public static final CaptureResult.Key<byte[]> StreamCropInfo =
+            new CaptureResult.Key<>("com.qti.camera.streamCropInfo.StreamCropInfo", byte[].class);
 
     TotalCaptureResult mCaptureResult;
     boolean enableGyroRefinementParam;
@@ -898,6 +901,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     private ImageReader[] mYUVImageReader = new ImageReader[3];
     private String mMasterCameraId;
     private ArrayList<Integer> mActiveCameraIds = new ArrayList<Integer>();
+    private HashMap<Integer, Boolean> mAideActiveCameraIds = new HashMap<Integer, Boolean>();//<cameraid, isPrimal>
     //used for aide capture request and callback
     private int mCaptureRequestNum = 0;
     private float mAideAECLuxIndex = -1.0f;
@@ -3851,14 +3855,17 @@ public class CaptureModule implements CameraModule, PhotoController,
                             Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
                             if(physical_ids != null && physical_ids.size() != 0){
                                 synchronized (mActiveCameraIds) {
+                                    mAideActiveCameraIds.clear();
                                     if(mActiveCameraIds.size() > 1 ){
                                         for (int activeId : mActiveCameraIds) {
                                             if(activeId != Integer.valueOf(mMasterCameraId)){
                                                 Log.i(TAG,"add Aux full yuv for dual zone" + activeId);
                                                 captureBuilder.addTarget(mAideFullImageReader[getIndexByPhysicalId(Integer.toString(activeId))].getSurface());
                                                 mCaptureRequestNum ++ ;
+                                                mAideActiveCameraIds.put(activeId, false);
                                             }else {
                                                 Log.i(TAG,"add master full yuv for dual zone " + activeId);
+                                                mAideActiveCameraIds.put(activeId, true);
                                                 captureBuilder.addTarget(mAideFullImageReader[getIndexByPhysicalId(Integer.toString(activeId))].getSurface());
                                                 mCaptureRequestNum ++ ;
                                                 if(mAideAECLuxIndex >= lux_index_threadhold){//for low light, only HWMFNR, will not add ds image
@@ -3869,6 +3876,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             }
                                         }
                                     }else if(mActiveCameraIds.size() == 1){
+                                        mAideActiveCameraIds.put(mActiveCameraIds.get(0), true);
                                         Log.i(TAG,"add active full yuv for single zone " + mActiveCameraIds.get(0));
                                         captureBuilder.addTarget(mAideFullImageReader[getIndexByPhysicalId(Integer.toString(mActiveCameraIds.get(0)))].getSurface());
                                         mCaptureRequestNum ++ ;
@@ -4271,7 +4279,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         @Override
         public void onCaptureSequenceCompleted(CameraCaptureSession session, int
                 sequenceId, long frameNumber) {
-            Log.d(TAG, "onCaptureSequenceCompleted");
+            Log.d(TAG, "onCaptureSequenceCompleted:" + frameNumber);
             mNamedImages.nameNewImage(System.currentTimeMillis());
             NamedEntity namedEntity = mNamedImages.getNextNameEntity();
             String title = (namedEntity == null) ? null : namedEntity.title;
@@ -4366,33 +4374,53 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     public Rect cropRegionForAideV2Zoom() {
+        if(mZoomValue == 1){
+            Rect cropRegion = new Rect(0,0, mAideFullImage.getWidth(),mAideFullImage.getHeight());
+            return cropRegion;
+        }
+        Rect originalCropRegion = new Rect();
+        Set<String> physical_ids = mSettingsManager.getAllPhysicalCameraId();
+        if(physical_ids != null && physical_ids.size() != 0){
+            String physicalId = mMasterCameraId;
+            for(Integer key : mAideActiveCameraIds.keySet()){
+                if(mAideActiveCameraIds.get(key)){
+                   physicalId = Integer.toString(key);
+                }
+            }
+            Log.i(TAG,"frame number: " + mCaptureResult.getFrameNumber());
+            CaptureResult physicalMetaData = mCaptureResult.getPhysicalCameraResults().get(physicalId);
+            originalCropRegion = physicalMetaData.get(CaptureResult.SCALER_CROP_REGION);
+            Log.i(TAG,"physicalCropRegion:" + originalCropRegion.toString());
+        }else {
+            originalCropRegion = mCaptureResult.get(CaptureResult.SCALER_CROP_REGION);
+            Log.i(TAG,"single crop region:" + originalCropRegion.toString());
+        }
         //output yuv and final picture have the different resolution ratio
-        if (DEBUG) {
-            Log.d(TAG, "cropRegionForAideV2Zoom ");
-        }
-        Rect activeRegion = new Rect(0, 0, mAideFullImage.getWidth(), mAideFullImage.getHeight());
-        Rect pictureRegion = new Rect(0, 0, mPictureSize.getWidth(), mPictureSize.getHeight());
         Rect cropRegion = new Rect();
-        int xCenter = activeRegion.width() / 2;
-        int yCenter = activeRegion.height() / 2;
-        int xDelta = (int) (activeRegion.width() / 2);
-        int yDelta = (int) (activeRegion.height() / 2);
-
-        cropRegion.set(xCenter - xDelta, yCenter - yDelta, xCenter + xDelta, yCenter + yDelta);
-        if(cropRegion.width() > pictureRegion.width()){
-            xDelta = (int) (pictureRegion.width() / 2);
-            yDelta = (int) (pictureRegion.height() / 2);
+        int width = originalCropRegion.width();
+        int height = originalCropRegion.height();
+        Log.d(TAG, "cropRegionForAideV2Zoom  width: " +  width + ",height:" + height);
+        if(width > mAideFullImage.getWidth() || height > mAideFullImage.getHeight()){
+            width = mAideFullImage.getWidth();
+            height = mAideFullImage.getHeight();
+        }
+        float aideRatio = (float) mAideFullImage.getWidth() / mAideFullImage.getHeight();
+        float pictureRatio = (float) mPictureSize.getWidth() / mPictureSize.getHeight();
+        if(aideRatio > pictureRatio){
+            width = mPictureSize.getWidth()/mPictureSize.getHeight()*height;
+        } else if (aideRatio < pictureRatio){
+            height = width * mPictureSize.getHeight() /mPictureSize.getWidth();
+        }
+        Log.d(TAG, "cropRegionForAideV2Zoom current ratio width: " +  width + ",height:" + height);
+        if(aideRatio != pictureRatio) {
+            int xCenter = mAideFullImage.getWidth() / 2;
+            int yCenter = mAideFullImage.getHeight() / 2;
+            int xDelta = (int) (width / 2);
+            int yDelta = (int) (height / 2);
             cropRegion.set(xCenter - xDelta, yCenter - yDelta, xCenter + xDelta, yCenter + yDelta);
+        }else {
+            cropRegion = originalCropRegion;
         }
-
-        if(cropRegion.width()/cropRegion.height() > mPictureSize.getWidth()/mPictureSize.getHeight()){
-            int width = mPictureSize.getWidth()/mPictureSize.getHeight()*cropRegion.height();
-            xDelta = (int) (width / 2);
-        } else if (cropRegion.width()/cropRegion.height() < mPictureSize.getWidth()/mPictureSize.getHeight()){
-            int height = cropRegion.width() * mPictureSize.getHeight() /mPictureSize.getWidth();
-            yDelta = (int) (height / 2);
-        }
-        cropRegion.set(xCenter - xDelta, yCenter - yDelta, xCenter + xDelta, yCenter + yDelta);
         Log.d(TAG, "cropRegionForAideV2Zoom  cropRegion: " +  cropRegion);
         return cropRegion;
     }
@@ -4909,7 +4937,11 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         @Override
                                         public void onImageAvailable(ImageReader reader) {
                                             Log.d(TAG,"new aide full image from physical id="+pyhsicalId);
-                                            mAideFullImage = reader.acquireNextImage();
+                                            if(mAideActiveCameraIds.get(Integer.valueOf(pyhsicalId))){
+                                                mAideFullImage = reader.acquireNextImage();
+                                                byte[] bytes = getJpegData(mAideFullImage);
+                                                mActivity.getMediaSaveService().addRawImage(bytes, "fullyuv", "raw");
+                                            }
                                             mActivity.getAIDenoiserService().increment();
                                         }
                                     }, mImageAvailableHandler);
