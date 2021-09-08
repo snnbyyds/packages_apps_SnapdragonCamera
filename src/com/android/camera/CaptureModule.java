@@ -3991,7 +3991,6 @@ public class CaptureModule implements CameraModule, PhotoController,
                 }
                 if (mNumFramesArrived.get() >= mShotNum) {
                     mLongshotActive = false;
-                    mNumFramesArrived.getAndSet(0);
                     return;
 
                 }
