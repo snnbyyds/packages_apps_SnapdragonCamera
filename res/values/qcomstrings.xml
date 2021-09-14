@@ -1600,7 +1600,7 @@
     <string name="pref_camera2_ai_denoiser_format_entry_value_nv21" translatable="false">1</string>
     <!-- ai denoiser mode value-->
     <string name="pref_camera2_ai_denoiser_mode_title" translatable="true">AI Denoiser Mode</string>
-    <string name="pref_camera2_ai_denoiser_mode_default" translatable="false">0</string>
+    <string name="pref_camera2_ai_denoiser_mode_default" translatable="false">1</string>
     <string name="pref_camera2_ai_denoiser_mode_entry_aide1" translatable="true">AIDE1</string>
     <string name="pref_camera2_ai_denoiser_mode_entry_aide2" translatable="true">AIDE2</string>
     <string name="pref_camera2_ai_denoiser_mode_entry_aide_sat" translatable="true">AIDE2_SAT</string>
