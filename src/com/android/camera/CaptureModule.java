@@ -5830,6 +5830,13 @@ public class CaptureModule implements CameraModule, PhotoController,
         applyShadingCorrection(builder);
         applyGcSHDRMode(builder);
         applyInSensorZoom(builder);
+        applyeMFNRAIDEMode(builder);
+    }
+
+    private void applyeMFNRAIDEMode(CaptureRequest.Builder builder){
+        if (isAIDE2Enabled()) {
+            VendorTagUtil.enableMFNRAIDEMode(builder, (byte)0x01);
+        }
     }
 
     private void applyHVXMFHDRMode(CaptureRequest.Builder builder){
