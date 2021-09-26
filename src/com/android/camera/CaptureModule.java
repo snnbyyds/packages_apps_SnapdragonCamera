@@ -11729,7 +11729,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void cancelTouchFocus(int id) {
-        if(mPaused)
+        if(mPaused || isTakingPicture())
             return;
         if (DEBUG) {
             Log.v(TAG, "cancelTouchFocus " + id);
