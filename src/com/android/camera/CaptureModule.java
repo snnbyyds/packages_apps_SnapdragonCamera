@@ -4408,15 +4408,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             height = width * mPictureSize.getHeight() /mPictureSize.getWidth();
         }
         Log.d(TAG, "cropRegionForAideV2Zoom current ratio width: " +  width + ",height:" + height);
-        if(aideRatio != pictureRatio) {
-            int xCenter = mAideFullImage.getWidth() / 2;
-            int yCenter = mAideFullImage.getHeight() / 2;
-            int xDelta = (int) (width / 2);
-            int yDelta = (int) (height / 2);
-            cropRegion.set(xCenter - xDelta, yCenter - yDelta, xCenter + xDelta, yCenter + yDelta);
-        }else {
-            cropRegion = originalCropRegion;
-        }
+        int xCenter = mAideFullImage.getWidth() / 2;
+        int yCenter = mAideFullImage.getHeight() / 2;
+        int xDelta = (int) (width / 2);
+        int yDelta = (int) (height / 2);
+        cropRegion.set(xCenter - xDelta, yCenter - yDelta, xCenter + xDelta, yCenter + yDelta);
         Log.d(TAG, "cropRegionForAideV2Zoom  cropRegion: " +  cropRegion);
         return cropRegion;
     }
@@ -4935,10 +4931,10 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             Log.d(TAG,"new aide full image from physical id="+pyhsicalId);
                                             if(mAideActiveCameraIds.get(Integer.valueOf(pyhsicalId))){
                                                 mAideFullImage = reader.acquireNextImage();
-                                                byte[] bytes = getJpegData(mAideFullImage);
-                                                mActivity.getMediaSaveService().addRawImage(bytes, "fullyuv", "raw");
+                                                byte[] yuv = getYUVFromImage(mAideFullImage);
+                                                mActivity.getMediaSaveService().addRawImage(yuv,"fullyuv","yuv");
+                                                mActivity.getAIDenoiserService().increment();
                                             }
-                                            mActivity.getAIDenoiserService().increment();
                                         }
                                     }, mImageAvailableHandler);
                                     mAideDs4ImageReader[getIndexByPhysicalId(id)] = ImageReader.newInstance(getDsxYUVSize().getWidth(),getDsxYUVSize().getHeight(),ImageFormat.YUV_420_888,MAX_IMAGEREADERS);
@@ -4947,6 +4943,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                         public void onImageAvailable(ImageReader reader) {
                                             Log.d(TAG,"new aide ds4 image from physical id="+pyhsicalId);
                                             mAideDownImage = reader.acquireNextImage();
+                                            byte[] yuv = getYUVFromImage(mAideDownImage);
+                                            mActivity.getMediaSaveService().addRawImage(yuv,"dsyuv","yuv");
                                             mActivity.getAIDenoiserService().increment();
                                         }
                                     }, mImageAvailableHandler);
@@ -4959,6 +4957,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     public void onImageAvailable(ImageReader reader) {
                                         Log.d(TAG,"new aide full image ");
                                         mAideFullImage = reader.acquireNextImage();
+                                        byte[] yuv = getYUVFromImage(mAideFullImage);
+                                        mActivity.getMediaSaveService().addRawImage(yuv,"fullyuv","yuv");
                                         mActivity.getAIDenoiserService().increment();
                                     }
                                 }, mImageAvailableHandler);
@@ -4968,6 +4968,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     public void onImageAvailable(ImageReader reader) {
                                         Log.d(TAG,"new aide ds4 image");
                                         mAideDownImage = reader.acquireNextImage();
+                                        byte[] yuv = getYUVFromImage(mAideDownImage);
+                                        mActivity.getMediaSaveService().addRawImage(yuv,"dsyuv","yuv");
                                         mActivity.getAIDenoiserService().increment();
                                     }
                                 }, mImageAvailableHandler);
