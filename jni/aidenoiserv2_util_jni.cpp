@@ -58,6 +58,9 @@ AIDE_Handle handle;
 uint32_t width;
 uint32_t height;
 uint32_t stride;
+uint32_t dsWidth;
+uint32_t dsHeight;
+uint32_t dsStride;
 
 jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineCreateV2(
         JNIEnv* env, jobject thiz, jintArray pInputFrameDim, jintArray pDsInputFrameDim, jintArray pOutputFrameDim,jint imageformat, jint mode)
@@ -77,6 +80,9 @@ jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineCreateV
     width = (uint32_t)inputFrameDim[0];
     height = (uint32_t)inputFrameDim[1];
     stride = (uint32_t)inputFrameDim[2];
+    dsWidth = (uint32_t)dsinputFrameDim[0];
+    dsHeight = (uint32_t)dsinputFrameDim[1];
+    dsStride = (uint32_t)dsinputFrameDim[2];
     jint *outputFrameDim = env->GetIntArrayElements(pOutputFrameDim, 0);
     AIDE_FrameDim _outputFrameDim;
     _outputFrameDim.width = (uint32_t)outputFrameDim[0];
@@ -156,6 +162,14 @@ jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineProcess
         fclose(inputFile);
     } else {
         printf( "aidefullinput is NULL");
+    }
+    FILE *inputDsFile = fopen("/data/data/org.codeaurora.snapcam/files/AideDsInput.yuv", "wb+");
+    if ((inputDsFile != NULL)){
+        WriteData(inputDsFile, cdsinputY, dsWidth, dsHeight, dsStride);
+        WriteData(inputDsFile, cdsinputVU, dsWidth, dsHeight/2, dsStride);
+        fclose(inputDsFile);
+    } else {
+        printf( "AideDsInput is NULL");
     }
     args.pInputLuma = cinputY;
     args.pInputChroma = cinputVU;

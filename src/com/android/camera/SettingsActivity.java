@@ -1519,6 +1519,7 @@ public class SettingsActivity extends PreferenceActivity {
         updateLongShotPreference();
         update3AInfoPreference();
         updateHVXMFHDRDependcyPreference();
+        updatePreference(SettingsManager.KEY_VIDEO_ENCODER_PROFILE);
     }
 
     private void updateAudioEncoderPreference() {

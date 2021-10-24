@@ -84,6 +84,8 @@ public class VendorTagUtil {
             new CaptureRequest.Key<>("org.quic.camera.DebugDumpStart.dumpStart", Byte.class);
     public static final CaptureRequest.Key<Byte> enableHVXMFHDRMode =
             new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableHVXMFHDRMode", byte.class);
+    public static final CaptureRequest.Key<Byte> enableMFNRAIDEMode =
+            new CaptureRequest.Key<>("org.codeaurora.qcamera3.sessionParameters.enableMFNRAIDEMode", byte.class);
 
     private static final int MANUAL_WB_DISABLE_MODE = 0;
     private static final int MANUAL_WB_CCT_MODE = 1;
@@ -264,6 +266,13 @@ public class VendorTagUtil {
         Log.i(TAG,"set enableHVXMFHDRMode: " + enable);
         if (isSupported(builder, enableHVXMFHDRMode)) {
             builder.set(enableHVXMFHDRMode, enable);
+        }
+    }
+
+    public static void enableMFNRAIDEMode(CaptureRequest.Builder builder, byte enable) {
+        Log.i(TAG,"set enableMFNRAIDEMode: " + enable);
+        if (isSupported(builder, enableMFNRAIDEMode)) {
+            builder.set(enableMFNRAIDEMode, enable);
         }
     }
 
