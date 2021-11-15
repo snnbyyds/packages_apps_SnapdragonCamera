@@ -4933,8 +4933,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                                 mAideFullImage = reader.acquireNextImage();
                                                 byte[] yuv = getYUVFromImage(mAideFullImage);
                                                 mActivity.getMediaSaveService().addRawImage(yuv,"fullyuv","yuv");
-                                                mActivity.getAIDenoiserService().increment();
                                             }
+                                            mActivity.getAIDenoiserService().increment();
                                         }
                                     }, mImageAvailableHandler);
                                     mAideDs4ImageReader[getIndexByPhysicalId(id)] = ImageReader.newInstance(getDsxYUVSize().getWidth(),getDsxYUVSize().getHeight(),ImageFormat.YUV_420_888,MAX_IMAGEREADERS);
