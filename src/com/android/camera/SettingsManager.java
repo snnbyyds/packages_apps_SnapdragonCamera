@@ -2418,32 +2418,11 @@ public class SettingsManager implements ListMenu.SettingsListener {
     }
 
     public boolean isHvxMFHDRSupported() {
-        boolean result = false;
-        try {
-            if (mCharacteristics.size() >0){
-                // 1 for Kodiak (if enabled) 0 for Lahaina
-                byte isSupported = mCharacteristics.get(getCurrentCameraId()).get(CaptureModule.hvxMFHDRSupported);
-                result = (isSupported == 1);
-            }
-        } catch (IllegalArgumentException|NullPointerException e) {
-            e.printStackTrace();
-            Log.w(TAG, "Supported hvxMFHDRSupported is null.");
-        }
-        return result;
+        return false;
     }
 
     public boolean isHvxShdrSupported(int id) {
-        boolean ret = false;
-        try{
-            if (mCharacteristics.size() >0){
-                byte hvx_shdr_available = mCharacteristics.get(id).get(
-                        CaptureModule.support_hvx_shdr);
-                ret = hvx_shdr_available == 1;
-            }
-        } catch(IllegalArgumentException|NullPointerException e){
-            e.printStackTrace();
-        }
-        return ret;
+             return false;
     }
 
     public boolean isHvxShdrRawBuffersRequired(int id){
