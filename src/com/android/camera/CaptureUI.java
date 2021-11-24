@@ -2107,6 +2107,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void onOrientationChanged() {
+        initFlashButton();
     }
 
     /**
