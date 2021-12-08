@@ -63,6 +63,8 @@ public class AideUtil {
 
     public native int nativeAIDenoiserEngineDestroyV2();
 
+    public native int nativeCvtYuvToRgb(byte[] input, byte[] output, int width, int height, int stride, int type);
+
     static {
         try {
             System.loadLibrary("jni_aidenoiserutil");
