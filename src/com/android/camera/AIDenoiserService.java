@@ -387,7 +387,7 @@ public class AIDenoiserService extends Service {
         activity.getMediaSaveService().addRawImage(srcImage,"aftercrop","yuv");
         Bitmap bitmap = nv21ToRgbAndResize(activity.getApplicationContext(), srcImage,rect.width(),
                 rect.height(), pictureSize.getWidth(), pictureSize.getHeight());
-        srcImage = bitmapToJpeg(bitmap, orientation, captureResult);
+        srcImage = bitmapToJpeg(bitmap, orientation, captureResult, quality);
         Log.d(TAG,"test done");
         System.gc();
         return srcImage;
@@ -534,9 +534,10 @@ public class AIDenoiserService extends Service {
         return bytes;
     }
 
-    public byte[] bitmapToJpeg(Bitmap bitmap, int orientation, TotalCaptureResult result){
+    public byte[] bitmapToJpeg(Bitmap bitmap, int orientation, TotalCaptureResult result, int quality){
+        Log.i(TAG,"bitmapToJpeg, quality:" + quality);
         BitmapOutputStream bos = new BitmapOutputStream(1024);
-        bitmap.compress(Bitmap.CompressFormat.JPEG,85,bos);
+        bitmap.compress(Bitmap.CompressFormat.JPEG,quality,bos);
         byte[] bytes = bos.getArray();
         bytes = addExifTags(bytes, orientation, result);
         return bytes;
