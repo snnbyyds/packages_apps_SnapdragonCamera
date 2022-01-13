@@ -39,6 +39,14 @@ extern "C" {
 #define ARRAY_LEN(arr)                  (sizeof(arr) / sizeof(arr[0]))
 #define AIDE_STATIC_ASSERT(COND, MSG)   typedef char static_assertion_##MSG[(COND)?1:-1]
 
+#ifndef MAX
+#define        MAX(a, b) (((a) > (b)) ? (a) : (b))     /* Maximum value */
+#endif
+
+#ifndef MIN
+#define        MIN(a, b) (((a) < (b)) ? (a) : (b))     /* Minimum value */
+#endif
+
 // AIDE is shorthand for AI Denoiser Engine
 
 // AI Denoiser Engine Handle

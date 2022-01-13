@@ -50,6 +50,8 @@ JNIEXPORT jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEng
         JNIEnv* env, jobject thiz);
 JNIEXPORT jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineDestroyV2(
         JNIEnv* env, jobject thiz);
+JNIEXPORT jint JNICALL Java_com_android_camera_aide_AideUtil_nativeCvtYuvToRgb(
+        JNIEnv* env, jobject thiz, jbyteArray input, jbyteArray rgboutput, jint width, jint height, jint stride, jint type);
 #ifdef __cplusplus
 }
 #endif
@@ -201,4 +203,83 @@ jint JNICALL Java_com_android_camera_aide_AideUtil_nativeAIDenoiserEngineDestroy
         JNIEnv* env, jobject thiz)
 {
     return AIDenoiserEngine_Destroy(handle);
+}
+
+JNIEXPORT jint JNICALL Java_com_android_camera_aide_AideUtil_nativeCvtYuvToRgb(
+        JNIEnv* env, jobject thiz, jbyteArray input, jbyteArray rgboutput, jint width, jint height, jint stride, jint type)
+{
+    printf("aide nativeCvtYuvToRgb,width=%d,height=%d,stride=%d,type=%d", width,height,stride,type);
+    jbyte* inputArray = env->GetByteArrayElements(input, NULL);
+    uint8_t* cinput = (uint8_t*)inputArray;
+    uint8_t* pY = (uint8_t*)&(cinput[0]);
+    uint8_t* pC = (uint8_t*)&(cinput[stride*height]);
+
+    jbyte* outputArray = env->GetByteArrayElements(rgboutput, NULL);
+    uint8_t* coutput = (uint8_t*)outputArray;
+        // planar rgb
+    uint8_t* pRed = (uint8_t*)malloc(height * stride * sizeof(uint8_t));
+    uint8_t* pGreen = (uint8_t*)malloc(height * stride * sizeof(uint8_t));
+    uint8_t* pBlue = (uint8_t*)malloc(height * stride * sizeof(uint8_t));
+    const uint32_t maxRgb = 255;
+    for (int i = 0; i < height; i += 2) {
+        for (int j = 0; j < width; j += 2) {
+            // luma
+            int index00 = (i + 0) * stride + (j + 0);
+            int index01 = (i + 0) * stride + (j + 1);
+            int index10 = (i + 1) * stride + (j + 0);
+            int index11 = (i + 1) * stride + (j + 1);
+            int32_t y00 = (int32_t)(pY[index00]);
+            int32_t y01 = (int32_t)(pY[index01]);
+            int32_t y10 = (int32_t)(pY[index10]);
+            int32_t y11 = (int32_t)(pY[index11]);
+            // chroma
+            int index00cr;
+            int index01cb;
+            if ((uint32_t)type == 1) {
+                //COLOR_ORDER_YCrCb, default is NV21
+                index00cr = (i / 2) * stride + (j + 0);
+                index01cb = (i / 2) * stride + (j + 1);
+            }
+            else {
+                //COLOR_ORDER_YCbCr
+                index00cr = (i / 2) * stride + (j + 1);
+                index01cb = (i / 2) * stride + (j + 0);
+            }
+            int32_t cr = (int32_t)(pC[index00cr]) - 128;
+            int32_t cb = (int32_t)(pC[index01cb]) - 128;
+            // red
+            pRed[index00] = (uint8_t)(MIN(maxRgb, MAX(((256 * y00 + 360 * cr + 128) >> 8), 0)));
+            pRed[index01] = (uint8_t)(MIN(maxRgb, MAX(((256 * y01 + 360 * cr + 128) >> 8), 0)));
+            pRed[index10] = (uint8_t)(MIN(maxRgb, MAX(((256 * y10 + 360 * cr + 128) >> 8), 0)));
+            pRed[index11] = (uint8_t)(MIN(maxRgb, MAX(((256 * y11 + 360 * cr + 128) >> 8), 0)));
+            // green
+            pGreen[index00] = (uint8_t)(MIN(maxRgb, MAX(((256 * y00 - 88 * cb - 183 * cr + 128) >> 8), 0)));
+            pGreen[index01] = (uint8_t)(MIN(maxRgb, MAX(((256 * y01 - 88 * cb - 183 * cr + 128) >> 8), 0)));
+            pGreen[index10] = (uint8_t)(MIN(maxRgb, MAX(((256 * y10 - 88 * cb - 183 * cr + 128) >> 8), 0)));
+            pGreen[index11] = (uint8_t)(MIN(maxRgb, MAX(((256 * y11 - 88 * cb - 183 * cr + 128) >> 8), 0)));
+            // blue
+            pBlue[index00] = (uint8_t)(MIN(maxRgb, MAX(((256 * y00 + 455 * cb + 128) >> 8), 0)));
+            pBlue[index01] = (uint8_t)(MIN(maxRgb, MAX(((256 * y01 + 455 * cb + 128) >> 8), 0)));
+            pBlue[index10] = (uint8_t)(MIN(maxRgb, MAX(((256 * y10 + 455 * cb + 128) >> 8), 0)));
+            pBlue[index11] = (uint8_t)(MIN(maxRgb, MAX(((256 * y11 + 455 * cb + 128) >> 8), 0)));
+        }
+    }
+    for (int i = 0; i < height * stride * 3; i += 3) {
+        coutput[i + 0] = pRed[i / 3];
+        coutput[i + 1] = pGreen[i / 3];
+        coutput[i + 2] = pBlue[i / 3];
+    }
+    FILE *outputFile = fopen("/data/data/org.codeaurora.snapcam/files/Output.rgb", "wb+");
+    if ((outputFile != NULL)){
+        fwrite(coutput, 1, height * stride * 3, outputFile);
+        fclose(outputFile);
+    } else {
+        printf( "Output.rgb is NULL");
+    }
+    free(pRed);
+    free(pGreen);
+    free(pBlue);
+    env->ReleaseByteArrayElements(input, inputArray, JNI_ABORT);
+    env->ReleaseByteArrayElements(rgboutput, outputArray, JNI_ABORT);
+    return 1;
 }

@@ -29,6 +29,7 @@
 package com.android.camera.util;
 
 import android.graphics.Point;
+import android.media.MediaRecorder;
 import android.text.TextUtils;
 import android.util.Log;
 
@@ -160,6 +161,11 @@ public class PersistUtil {
             get("persist.sys.camera.maxBurstShotFPS", "0");
     private static final String PERSIST_CAMERA_LUX_IDX_THREADHOLD =
             get("persist.sys.camera.lux_idx_threadhold", "320");
+    // MediaRecorder.AudioSource.CAMCORDER = 5；Microphone audio source tuned for video recording.
+    // MediaRecorder.AudioSource.MIC = 1; Microphone audio source ;
+    // MediaRecorder.AudioSource.DEFAULT = 0; Default audio source *;
+    private static final int PERSIST_AUDIO_SOURCE =
+            getInt("persist.sys.camera.audio_source", MediaRecorder.AudioSource.CAMCORDER);
 
     public static String getHFRRate() {
         return PERSIST_HFR_LIMIT;
@@ -441,4 +447,6 @@ public class PersistUtil {
     public static float getLuxIdxThreadhold(){
         return Float.parseFloat(PERSIST_CAMERA_LUX_IDX_THREADHOLD);
     }
+
+    public static int getAudioSource() { return PERSIST_AUDIO_SOURCE; }
 }
