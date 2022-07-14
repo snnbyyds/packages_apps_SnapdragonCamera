@@ -31,6 +31,7 @@ public class CameraApp extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        sInstance = this;
         ActivityManager actManager = (ActivityManager) getSystemService(ACTIVITY_SERVICE);
         ActivityManager.MemoryInfo memInfo = new ActivityManager.MemoryInfo();
         actManager.getMemoryInfo(memInfo);
@@ -43,5 +44,7 @@ public class CameraApp extends Application {
         CameraUtil.initialize(this);
         SDCard.initialize(this);
     }
+
+    public static CameraApp sInstance;
 }
 

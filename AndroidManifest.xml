@@ -5,7 +5,7 @@
 
     <uses-sdk
         android:minSdkVersion="23"
-        android:targetSdkVersion="29" />
+        android:targetSdkVersion="33" />
 
     <uses-permission android:name="android.permission.INTERACT_ACROSS_USERS_FULL" />
     <uses-permission android:name="android.permission.SET_ORIENTATION" />
@@ -19,7 +19,6 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.WAKE_LOCK" />
-    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="android.permission.WRITE_SETTINGS" />
     <uses-permission android:name="android.permission.WRITE_SYNC_SETTINGS" />
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
@@ -39,7 +38,6 @@
         android:logo="@mipmap/ic_launcher_camera"
         android:restoreAnyVersion="true"
         android:supportsRtl="true"
-        android:requestLegacyExternalStorage="true"
         android:theme="@style/Theme.Camera" >
         <activity
             android:name="com.android.camera.CameraActivity"
@@ -53,7 +51,8 @@
             android:taskAffinity="com.android.camera.CameraActivity"
             android:theme="@style/Theme.Camera"
             android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
-            android:visibleToInstantApps="true">
+            android:visibleToInstantApps="true"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -70,7 +69,8 @@
                 android:launchMode="singleTop"
                 android:configChanges="orientation|screenSize|keyboardHidden"
                 android:parentActivityName="com.android.camera.CameraActivity"
-                android:visibleToInstantApps="true">
+                android:visibleToInstantApps="true"
+            android:exported="true">
 
                 <intent-filter>
                     <action android:name="android.media.action.VIDEO_CAMERA" />
@@ -132,7 +132,8 @@
             android:icon="@mipmap/ic_launcher_camera"
             android:label="@string/snapcam_app_name"
             android:launchMode="singleTop"
-            android:targetActivity="com.android.camera.CameraActivity">
+            android:targetActivity="com.android.camera.CameraActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -153,7 +154,8 @@
             android:screenOrientation="portrait"
             android:taskAffinity="com.android.camera.SecureCameraActivity"
             android:theme="@style/Theme.Camera"
-            android:windowSoftInputMode="stateAlwaysHidden|adjustPan" >
+            android:windowSoftInputMode="stateAlwaysHidden|adjustPan"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.media.action.STILL_IMAGE_CAMERA_SECURE" />
 
@@ -174,7 +176,8 @@
             android:name="com.android.camera.CameraGestureActivity"
             android:icon="@mipmap/ic_launcher_camera"
             android:label="@string/camera_gesture_title"
-            android:targetActivity="com.android.camera.SecureCameraActivity">
+            android:targetActivity="com.android.camera.SecureCameraActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.DEFAULT" />
@@ -203,12 +206,14 @@
             android:configChanges="keyboardHidden|orientation|screenSize">
         </activity>
 
-        <receiver android:name="com.android.camera.DisableCameraReceiver">
+        <receiver android:name="com.android.camera.DisableCameraReceiver"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
             </intent-filter>
         </receiver>
-        <receiver android:name="com.android.camera.CameraButtonIntentReceiver">
+        <receiver android:name="com.android.camera.CameraButtonIntentReceiver"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.CAMERA_BUTTON"/>
             </intent-filter>

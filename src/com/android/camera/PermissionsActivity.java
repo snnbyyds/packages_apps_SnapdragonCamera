@@ -35,7 +35,6 @@ public class PermissionsActivity extends Activity {
     private int mNumPermissionsToRequest;
     private boolean mFlagHasCameraPermission;
     private boolean mFlagHasMicrophonePermission;
-    private boolean mFlagHasStoragePermission;
     private boolean mCriticalPermissionDenied;
     private Intent mIntent;
     private boolean mIsReturnResult;
@@ -68,16 +67,6 @@ public class PermissionsActivity extends Activity {
             mShouldRequestMicrophonePermission = true;
         } else {
             mFlagHasMicrophonePermission = true;
-        }
-
-        if (checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED ||
-                checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            mNumPermissionsToRequest = mNumPermissionsToRequest + 2;
-            mShouldRequestStoragePermission = true;
-        } else {
-            mFlagHasStoragePermission = true;
         }
 
         if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
@@ -158,17 +147,6 @@ public class PermissionsActivity extends Activity {
                 mCriticalPermissionDenied = true;
             }
         }
-        if (mShouldRequestStoragePermission) {
-            if ((grantResults.length >= mIndexPermissionRequestStorageRead + 1) &&
-                (grantResults[mIndexPermissionRequestStorageWrite] ==
-                        PackageManager.PERMISSION_GRANTED) &&
-                    (grantResults[mIndexPermissionRequestStorageRead] ==
-                            PackageManager.PERMISSION_GRANTED)) {
-                mFlagHasStoragePermission = true;
-            } else {
-                mCriticalPermissionDenied = true;
-            }
-        }
 
         if (mShouldRequestLocationPermission) {
             if ((grantResults.length >= mIndexPermissionRequestLocation + 1) &&
@@ -180,8 +158,7 @@ public class PermissionsActivity extends Activity {
             }
         }
 
-        if (mFlagHasCameraPermission && mFlagHasMicrophonePermission &&
-                mFlagHasStoragePermission) {
+        if (mFlagHasCameraPermission && mFlagHasMicrophonePermission) {
             handlePermissionsSuccess();
         } else if (mCriticalPermissionDenied) {
             handlePermissionsFailure();
