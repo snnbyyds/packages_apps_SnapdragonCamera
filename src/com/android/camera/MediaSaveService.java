@@ -26,6 +26,7 @@ import android.app.Service;
 import android.content.ContentResolver;
 import android.content.ContentValues;
 import android.content.Intent;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
@@ -35,6 +36,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Binder;
 import android.os.IBinder;
+import android.provider.MediaStore;
 import android.provider.MediaStore.Video;
 import android.util.Log;
 import android.widget.Toast;
@@ -624,19 +626,40 @@ public class MediaSaveService extends Service {
             values.put(Video.Media.DURATION, duration);
             Uri uri = null;
             try {
-                Uri videoTable = Uri.parse(VIDEO_BASE_URI);
-                uri = resolver.insert(videoTable, values);
-
-                // Rename the video file to the final name. This avoids other
-                // apps reading incomplete data.  We need to do it after we are
-                // certain that the previous insert to MediaProvider is completed.
                 String finalName = values.getAsString(
                         Video.Media.DATA);
-                if (new File(path).renameTo(new File(finalName))) {
-                    path = finalName;
+                Cursor c = resolver.query(MediaStore.Video.Media.EXTERNAL_CONTENT_URI,
+                        new String[]{MediaStore.MediaColumns._ID},
+                        MediaStore.Video.Media.DATA + " like ? ", new String[]{finalName},
+                        null);
+                if (c != null) {
+                    if (c.moveToFirst()) {
+                        try {
+                            int index = c.getColumnIndexOrThrow(MediaStore.MediaColumns._ID);
+                            long id = c.getLong(index);
+                            uri = Uri.withAppendedPath(MediaStore.Video.Media.EXTERNAL_CONTENT_URI, String.valueOf(id));
+                        } catch (Exception e) {
+                            Log.e(TAG, "Failed to get id from MediaStore");
+                        }
+                    }
+                    c.close();
+
+                    if (uri != null) {
+                        values.put(MediaStore.MediaColumns.IS_PENDING, 0);
+                        resolver.update(uri, values, null, null);
+                    }
+                } else {
+                    Uri videoTable = Uri.parse(VIDEO_BASE_URI);
+                    uri = resolver.insert(videoTable, values);
+                    // Rename the video file to the final name. This avoids other
+                    // apps reading incomplete data.  We need to do it after we are
+                    // certain that the previous insert to MediaProvider is completed.
+                    if (new File(path).renameTo(new File(finalName))) {
+                        path = finalName;
+                    }
+                    resolver.update(uri, values, null, null);
                 }
 
-                resolver.update(uri, values, null, null);
             } catch (Exception e) {
                 // We failed to insert into the database. This can happen if
                 // the SD card is unmounted.

@@ -23,6 +23,7 @@ import java.io.IOException;
 import android.annotation.TargetApi;
 import android.content.ContentResolver;
 import android.content.ContentValues;
+import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.location.Location;
@@ -31,11 +32,13 @@ import android.os.Build;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.StatFs;
+import android.provider.MediaStore;
 import android.provider.MediaStore.Images;
 import android.provider.MediaStore.Images.ImageColumns;
 import android.provider.MediaStore.MediaColumns;
 import android.util.Log;
 
+import com.android.camera.app.CameraApp;
 import com.android.camera.data.LocalData;
 import com.android.camera.exif.ExifInterface;
 import com.android.camera.util.ApiHelper;
@@ -214,6 +217,8 @@ public class Storage {
         if (f.exists() && f.isFile()) {
             size = (int) f.length();
         }
+        addImage(CameraApp.sInstance.getContentResolver(), title, System.currentTimeMillis(), null, 0,
+                size, path, 0, 0, mimeType);
         return size;
     }
 
@@ -288,14 +293,14 @@ public class Storage {
                 return DIRECTORY + '/' + title + suffix;
             }
         } else if (pictureFormat.equalsIgnoreCase("yuv")){
-            String suffix = ".yuv";
+            String suffix = ".yuv.jpg";
             if (isSaveSDCard() && SDCard.instance().isWriteable()) {
                 return SDCard.instance().getDirectory() + '/' + title + suffix;
             } else {
                 return DIRECTORY + '/' + title + suffix;
             }
         } else {
-            return RAW_DIRECTORY + '/' + title + ".raw";
+            return RAW_DIRECTORY + '/' + title + ".raw.jpg";
         }
     }
 
@@ -371,7 +376,33 @@ public class Storage {
     private static Uri insertImage(ContentResolver resolver, ContentValues values) {
         Uri uri = null;
         try {
-            uri = resolver.insert(Images.Media.EXTERNAL_CONTENT_URI, values);
+            String finalName = values.getAsString(
+                    MediaStore.Video.Media.DATA);
+            Cursor c = resolver.query(Images.Media.EXTERNAL_CONTENT_URI,
+                    new String[]{MediaColumns._ID},
+                    MediaStore.Images.Media.DATA + " like ? ", new String[]{finalName + "%"},
+                    null);
+            if (c != null) {
+                if (c.moveToFirst()) {
+                    try {
+                        int index = c.getColumnIndexOrThrow(MediaColumns._ID);
+                        long id = c.getLong(index);
+                        uri = Uri.withAppendedPath(Images.Media.EXTERNAL_CONTENT_URI, String.valueOf(id));
+                    } catch (Exception e) {
+                        Log.e(TAG, "Failed to get id from MediaStore");
+                    }
+                }
+                c.close();
+
+                if (uri != null) {
+                    ContentValues contentValues = new ContentValues(1);
+                    contentValues.put(MediaColumns.IS_PENDING, 0);
+                    resolver.update(uri, contentValues, null, null);
+                }
+            } else {
+                uri = resolver.insert(Images.Media.EXTERNAL_CONTENT_URI, values);
+            }
+
         } catch (Throwable th)  {
             // This can happen when the external volume is already mounted, but
             // MediaScanner has not notify MediaProvider to add that volume.
@@ -380,6 +411,7 @@ public class Storage {
             // cannot click the thumbnail to review the picture.
             Log.e(TAG, "Failed to write MediaStore" + th);
         }
+        Log.d(TAG, "insertImage uri " + uri);
         return uri;
     }
 }
