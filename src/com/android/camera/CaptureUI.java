@@ -95,6 +95,7 @@ import com.android.camera.util.PersistUtil;
 
 import org.codeaurora.snapcam.R;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -2868,7 +2869,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return mCameraControls.getPromode();
     }
 
-    public void swipeCameraMode(int move) {
+    public void swipeCameraMode(int move)  {
         if (mIsVideoUI || !mModule.getCameraModeSwitcherAllowed() ||
                 mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
             return;
@@ -2885,7 +2886,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mModule.selectCameraMode(mode);
     }
 
-    public void switchToPhotoModeDueToError(boolean switchCamera) {
+    public void switchToPhotoModeDueToError(boolean switchCamera){
         int photoModeIndex = 1;
         List<String> modeList = mModule.getCameraModeList();
         for (; photoModeIndex < modeList.size(); photoModeIndex++) {
