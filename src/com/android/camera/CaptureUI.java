@@ -89,6 +89,7 @@ import com.android.camera.ui.TrackingFocusRenderer;
 import com.android.camera.ui.ZoomRenderer;
 import com.android.camera.ui.TouchTrackFocusRenderer;
 import com.android.camera.ui.StateNNTrackFocusRenderer;
+import com.android.camera.util.ApiHelper;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.deepportrait.GLCameraPreview;
 import com.android.camera.util.PersistUtil;
@@ -2754,9 +2755,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showSurfaceView() {
-        Log.d(TAG, "showSurfaceView" + mPreviewWidth+" "+mPreviewHeight);
+        int ori = CameraUtil.getDisplayRotation(mActivity);
+        Log.d(TAG, "showSurfaceView" + mPreviewWidth+" "+mPreviewHeight+
+                ",getDisplayRotation="+ori+",isAndroidSOrHigher="+ApiHelper.isAndroidSOrHigher());
         mSurfaceView.getHolder().setFixedSize(mPreviewWidth, mPreviewHeight);
-        mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);
+        if((ori == 90 || ori == 270) && ApiHelper.isAndroidSOrHigher() &&
+         !mActivity.getOriSensor()) {
+            Log.i(TAG,"showSurfaceView:Will go into enhanced-letterboxing on tablets and" +
+                    "no orientation sensor project ");
+            mSurfaceView.setAspectRatio(mPreviewWidth, mPreviewHeight);
+        }else {
+            mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);
+        }
         mSurfaceView.setVisibility(View.VISIBLE);
         mIsVideoUI = false;
     }
