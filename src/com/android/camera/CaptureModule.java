@@ -9104,7 +9104,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         return path;
     }
 
-    private void saveVideo() {
+    private void saveVideo(){
         if (mSettingsManager.isMultiCameraEnabled()) {
             Set<String> ids = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_CAMCORDER);
@@ -9165,7 +9165,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "cannot access the file");
             }
-            retriever.release();
+            try {
+                retriever.release();
+            } catch (Exception e) {
+                Log.e(TAG, "cannotretriever.release");
+            }
 
             mActivity.getMediaSaveService().addVideo(mVideoFilename,
                     duration, mCurrentVideoValues,
@@ -13270,7 +13274,7 @@ class MFNRDrawer extends View {
 }
 
 abstract class PhysicalImageListener
-        implements ImageReader.OnImageAvailableListener{
+        implements ImageReader.OnImageAvailableListener {
     private String mCamId;
 
     public void setCamId(String camId) {
