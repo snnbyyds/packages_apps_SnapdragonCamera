@@ -89,12 +89,14 @@ import com.android.camera.ui.TrackingFocusRenderer;
 import com.android.camera.ui.ZoomRenderer;
 import com.android.camera.ui.TouchTrackFocusRenderer;
 import com.android.camera.ui.StateNNTrackFocusRenderer;
+import com.android.camera.util.ApiHelper;
 import com.android.camera.util.CameraUtil;
 import com.android.camera.deepportrait.GLCameraPreview;
 import com.android.camera.util.PersistUtil;
 
 import org.codeaurora.snapcam.R;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -2753,9 +2755,18 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
     }
 
     public void showSurfaceView() {
-        Log.d(TAG, "showSurfaceView" + mPreviewWidth+" "+mPreviewHeight);
+        int ori = CameraUtil.getDisplayRotation(mActivity);
+        Log.d(TAG, "showSurfaceView" + mPreviewWidth+" "+mPreviewHeight+
+                ",getDisplayRotation="+ori+",isAndroidSOrHigher="+ApiHelper.isAndroidSOrHigher());
         mSurfaceView.getHolder().setFixedSize(mPreviewWidth, mPreviewHeight);
-        mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);
+        if((ori == 90 || ori == 270) && ApiHelper.isAndroidSOrHigher() &&
+         !mActivity.getOriSensor()) {
+            Log.i(TAG,"showSurfaceView:Will go into enhanced-letterboxing on tablets and" +
+                    "no orientation sensor project ");
+            mSurfaceView.setAspectRatio(mPreviewWidth, mPreviewHeight);
+        }else {
+            mSurfaceView.setAspectRatio(mPreviewHeight, mPreviewWidth);
+        }
         mSurfaceView.setVisibility(View.VISIBLE);
         mIsVideoUI = false;
     }
@@ -2868,7 +2879,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         return mCameraControls.getPromode();
     }
 
-    public void swipeCameraMode(int move) {
+    public void swipeCameraMode(int move)  {
         if (mIsVideoUI || !mModule.getCameraModeSwitcherAllowed() ||
                 mModule.getCurrentIntentMode() != CaptureModule.INTENT_MODE_NORMAL) {
             return;
@@ -2885,7 +2896,7 @@ public class CaptureUI implements FocusOverlayManager.FocusUI,
         mModule.selectCameraMode(mode);
     }
 
-    public void switchToPhotoModeDueToError(boolean switchCamera) {
+    public void switchToPhotoModeDueToError(boolean switchCamera){
         int photoModeIndex = 1;
         List<String> modeList = mModule.getCameraModeList();
         for (; photoModeIndex < modeList.size(); photoModeIndex++) {

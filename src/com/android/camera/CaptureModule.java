@@ -3850,7 +3850,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                         String path = Storage.generateFilepath(title, pictureFormat);
                         String value = mSettingsManager.getValue(SettingsManager.KEY_JPEG_QUALITY);
                         int quality = getQualityNumber(value);
-                        int orientation = CameraUtil.getJpegRotation(id,mOrientation);
+                        int orientation = mActivity.getOriSensor()? CameraUtil.getJpegRotation(id,mOrientation):0;
                         int imageCount = mLongshotActive? PersistUtil.getLongshotShotLimit(): 1;
                         HeifWriter writer = createHEIFEncoder(path,mPictureSize.getWidth(),mPictureSize.getHeight(),
                                 orientation,imageCount,quality);
@@ -4242,7 +4242,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                         Log.i(TAG,"aecLuxIndex:"+ aecLuxIndex);
                         if(!isAIDEEnabled() || ( isAIDEEnabled() && aecLuxIndex < 320)){
                             if (TRACE_DEBUG) Trace.beginSection("save jpeg");
-                            byte[] srcImage = mActivity.getAIDenoiserService().generateImage(mActivity, true, CameraUtil.getJpegRotation(id,mOrientation), mPictureSize, cropRegion, mCaptureResult, quality);
+                            byte[] srcImage = mActivity.getAIDenoiserService().generateImage(mActivity, true,
+                                    mActivity.getOriSensor()? CameraUtil.getJpegRotation(id,mOrientation):0, mPictureSize, cropRegion, mCaptureResult, quality);
                             Log.i(TAG,"save image:mOrientation:" +mOrientation  + ",ori:" + CameraUtil.getJpegRotation(id,mOrientation));
                             NamedEntity name = mNamedImages.getNextNameEntity();
                             String title = (name == null) ? null : name.title;
@@ -4250,7 +4251,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     srcImage, title, 0L, null,
                                     mPictureSize.getWidth(),
                                     mPictureSize.getHeight(),
-                                    CameraUtil.getJpegRotation(id,mOrientation), null, getMediaSavedListener(),
+                                   mActivity.getOriSensor()? CameraUtil.getJpegRotation(id,mOrientation) :0
+                                   , null, getMediaSavedListener(),
                                     mActivity.getContentResolver(), "jpeg");
                             mActivity.updateThumbnail(srcImage);
                             if (TRACE_DEBUG) Trace.endSection();
@@ -4261,14 +4263,16 @@ public class CaptureModule implements CameraModule, PhotoController,
                             mActivity.getAIDenoiserService().startAideProcess(100000, 100, denoiseStrengthParam, (int)(mRGain*1024), (int)(mBGain*1024), (int)(mGGain*1024));
                             if (TRACE_DEBUG) Trace.endSection();
                             if (TRACE_DEBUG) Trace.beginSection("save jpeg");
-                            byte[] srcImage = mActivity.getAIDenoiserService().generateImage(mActivity, false, CameraUtil.getJpegRotation(id,mOrientation), mPictureSize, cropRegion, mCaptureResult, quality);
+                            byte[] srcImage = mActivity.getAIDenoiserService().generateImage(mActivity, false, mActivity.getOriSensor()? CameraUtil.getJpegRotation(id,mOrientation):0,
+                                    mPictureSize, cropRegion, mCaptureResult, quality);
                             NamedEntity name = mNamedImages.getNextNameEntity();
                             String title = (name == null) ? null : name.title;
                             mActivity.getMediaSaveService().addImage(
                                     srcImage, title, 0L, null,
                                     mPictureSize.getWidth(),
                                     mPictureSize.getHeight(),
-                                    CameraUtil.getJpegRotation(id,mOrientation), null, getMediaSavedListener(),
+                                    mActivity.getOriSensor()? CameraUtil.getJpegRotation(id,mOrientation):0,
+                                    null, getMediaSavedListener(),
                                     mActivity.getContentResolver(), "jpeg");
                             mActivity.updateThumbnail(srcImage);
                             if (TRACE_DEBUG) Trace.endSection();
@@ -4307,7 +4311,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             NamedEntity namedEntity = mNamedImages.getNextNameEntity();
             String title = (namedEntity == null) ? null : namedEntity.title;
             int id = getMainCameraId();
-            int orientation = CameraUtil.getJpegRotation(id,mOrientation);
+            int orientation = mActivity.getOriSensor()? CameraUtil.getJpegRotation(id,mOrientation) :0;
             int quality = getQualityNumber(mSettingsManager.getValue(SettingsManager.KEY_JPEG_QUALITY));
             unlockFocus(id);
             enableShutterButtonOnMainThread(id);
@@ -4567,7 +4571,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             checkAndPlayShutterSound(id);
             CaptureRequest.Builder captureBuilder = getRequestBuilder(id, CameraDevice.TEMPLATE_VIDEO_SNAPSHOT);
 
-            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, CameraUtil.getJpegRotation(id, mOrientation));
+            captureBuilder.set(CaptureRequest.JPEG_ORIENTATION, mActivity.getOriSensor()? CameraUtil.getJpegRotation(id, mOrientation):0);
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_SIZE, mVideoSnapshotThumbSize);
             captureBuilder.set(CaptureRequest.JPEG_THUMBNAIL_QUALITY, (byte)80);
             applyVideoSnapshot(captureBuilder, id);
@@ -4611,7 +4615,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     String path = Storage.generateFilepath(title, "heif");
                     String value = mSettingsManager.getValue(SettingsManager.KEY_JPEG_QUALITY);
                     int quality = getQualityNumber(value);
-                    int orientation = CameraUtil.getJpegRotation(id,mOrientation);
+                    int orientation = mActivity.getOriSensor()? CameraUtil.getJpegRotation(id,mOrientation):0;
                     HeifWriter writer = createHEIFEncoder(path,mVideoSize.getWidth(),
                             mVideoSize.getHeight(),orientation,1,quality);
                     if (writer != null) {
@@ -4888,7 +4892,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                                             exif = Exif.getExif(bytes);
                                             orientation = Exif.getOrientation(exif);
                                         } else {
-                                            orientation = CameraUtil.getJpegRotation(mCamId,mOrientation);
+                                            orientation =mActivity.getOriSensor()? CameraUtil.getJpegRotation(mCamId,mOrientation):0;
                                         }
 
                                         if (mIntentMode != CaptureModule.INTENT_MODE_NORMAL &&
@@ -5129,7 +5133,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             exif = Exif.getExif(bytes);
                             orientation = Exif.getOrientation(exif);
                         } else {
-                            orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
+                            orientation = mActivity.getOriSensor()? CameraUtil.getJpegRotation(getMainCameraId(),mOrientation):0;
                         }
                         Log.d(TAG, "new jpeg image from physical camera orientation :"+ orientation);
                         mActivity.getMediaSaveService().addImage(bytes, title, date,
@@ -5291,8 +5295,8 @@ public class CaptureModule implements CameraModule, PhotoController,
                                     exif = Exif.getExif(bytes);
                                     orientation = Exif.getOrientation(exif);
                                 } else {
-                                    orientation = CameraUtil.getJpegRotation(
-                                            getMainCameraId(),mOrientation);
+                                    orientation = mActivity.getOriSensor()? CameraUtil.getJpegRotation(
+                                            getMainCameraId(),mOrientation):0;
                                 }
                                 mActivity.getMediaSaveService().addImage(bytes, title, date,
                                         null, image.getWidth(), image.getHeight(), orientation, null,
@@ -5358,7 +5362,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                             exif = Exif.getExif(bytes);
                             orientation = Exif.getOrientation(exif);
                         } else {
-                            orientation = CameraUtil.getJpegRotation(getMainCameraId(),mOrientation);
+                            orientation = mActivity.getOriSensor()? CameraUtil.getJpegRotation(getMainCameraId(),mOrientation):0;
                         }
 
                         String saveFormat = image.getFormat() == ImageFormat.HEIC? "heic" : "jpeg";
@@ -5820,7 +5824,7 @@ public class CaptureModule implements CameraModule, PhotoController,
             Log.d(TAG, "no location - getRecordLocation: " + getRecordLocation());
         }
 
-        builder.set(CaptureRequest.JPEG_ORIENTATION, CameraUtil.getJpegRotation(id, mOrientation));
+        builder.set(CaptureRequest.JPEG_ORIENTATION, mActivity.getOriSensor()? CameraUtil.getJpegRotation(id, mOrientation):0);
         builder.set(CaptureRequest.JPEG_THUMBNAIL_SIZE, mPictureThumbSize);
         builder.set(CaptureRequest.JPEG_THUMBNAIL_QUALITY, (byte)80);
     }
@@ -9104,7 +9108,7 @@ public class CaptureModule implements CameraModule, PhotoController,
         return path;
     }
 
-    private void saveVideo() {
+    private void saveVideo(){
         if (mSettingsManager.isMultiCameraEnabled()) {
             Set<String> ids = mSettingsManager.getPhysicalFeatureEnableId(
                     SettingsManager.KEY_PHYSICAL_CAMCORDER);
@@ -9165,7 +9169,11 @@ public class CaptureModule implements CameraModule, PhotoController,
             } catch (IllegalArgumentException e) {
                 Log.e(TAG, "cannot access the file");
             }
-            retriever.release();
+            try {
+                retriever.release();
+            } catch (Exception e) {
+                Log.e(TAG, "cannotretriever.release");
+            }
 
             mActivity.getMediaSaveService().addVideo(mVideoFilename,
                     duration, mCurrentVideoValues,
@@ -9245,7 +9253,7 @@ public class CaptureModule implements CameraModule, PhotoController,
                     recorder.setVideoSize(profile.videoFrameWidth, profile.videoFrameHeight);
                     recorder.setVideoEncoder(MediaRecorder.VideoEncoder.H264);
                     recorder.setAudioEncoder(MediaRecorder.AudioEncoder.AAC);
-                    int rotation = CameraUtil.getJpegRotation(getMainCameraId(), mOrientation);
+                    int rotation = mActivity.getOriSensor()? CameraUtil.getJpegRotation(getMainCameraId(), mOrientation):0;
                     recorder.setOrientationHint(rotation);
                     mPhysicalMediaRecorders[i] = recorder;
                     try {
@@ -9348,7 +9356,7 @@ public class CaptureModule implements CameraModule, PhotoController,
     }
 
     private void setOrientationHint(int cameraId) {
-        int rotation = CameraUtil.getJpegRotation(cameraId, mOrientation);
+        int rotation = mActivity.getOriSensor()? CameraUtil.getJpegRotation(cameraId, mOrientation):0;
         String videoRotation = mSettingsManager.getValue(SettingsManager.KEY_VIDEO_ROTATION);
         if (videoRotation != null) {
             rotation += Integer.parseInt(videoRotation);
@@ -13270,7 +13278,7 @@ class MFNRDrawer extends View {
 }
 
 abstract class PhysicalImageListener
-        implements ImageReader.OnImageAvailableListener{
+        implements ImageReader.OnImageAvailableListener {
     private String mCamId;
 
     public void setCamId(String camId) {

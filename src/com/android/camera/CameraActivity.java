@@ -16,6 +16,8 @@
 
 package com.android.camera;
 
+import android.hardware.Sensor;
+import android.hardware.SensorManager;
 import android.hardware.camera2.CameraAccessException;
 import android.os.Parcel;
 import android.os.Parcelable;
@@ -121,6 +123,7 @@ import org.codeaurora.snapcam.R;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 import static com.android.camera.CameraManager.CameraOpenErrorCallback;
 
@@ -262,6 +265,7 @@ public class CameraActivity extends Activity
     private Cursor mCursor;
 
     private boolean mAutoTestEnabled = false;
+    private boolean mHasOriSensor = false;
 
     private WakeLock mWakeLock;
     private static final int REFOCUS_ACTIVITY_CODE = 1;
@@ -1712,6 +1716,7 @@ public class CameraActivity extends Activity
             registerAutoTestReceiver();
         }
         bindAIDenoiserService();
+        mHasOriSensor = hasOrentationSensor();
     }
 
     private void setRotationAnimation() {
@@ -2481,5 +2486,32 @@ public class CameraActivity extends Activity
             CameraUtil.showErrorAndFinish(CameraActivity.this,
                     R.string.cannot_connect_camera);
         }
+    }
+    public boolean getOriSensor(){
+        return mHasOriSensor;
+    }
+    private boolean hasOrentationSensor(){
+        boolean result = false;
+        SensorManager mSensorManager = (SensorManager)this.getSystemService(Context.SENSOR_SERVICE);
+        if(mSensorManager == null){
+            return  false;
+        }
+        List<Sensor> mSensorList = mSensorManager.getSensorList(Sensor.TYPE_ALL);
+        if(mSensorList == null || mSensorList.size() == 0 ){
+            Log.i(TAG,"mSensorList size="+mSensorList.size());
+            return  false;
+        }else{
+            for (Sensor s : mSensorList) {
+                Log.i(TAG,"sensorname="+s.getName()+",sensortype="+s.getType()
+                        +"stringtyp="+s.getStringType());
+                String type = s.getStringType();
+                if("android.sensor.rotation_vector".equals(type) ||
+                        "android.sensor.rotation".equals(type)){
+                    return true;
+                }
+            }
+
+        }
+        return  result;
     }
 }
